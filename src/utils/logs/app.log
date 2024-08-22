@@ -1,0 +1,18 @@
+info: DB connected {"timestamp":"2024-08-22T14:16:37.245Z"}
+info: DB connected {"timestamp":"2024-08-22T14:20:40.857Z"}
+info: DB connected {"timestamp":"2024-08-22T14:20:58.772Z"}
+info: DB connected {"timestamp":"2024-08-22T14:21:19.660Z"}
+info: DB connected {"timestamp":"2024-08-22T14:21:40.755Z"}
+info: DB connected {"timestamp":"2024-08-22T14:22:25.592Z"}
+info: DB connected {"timestamp":"2024-08-22T14:22:47.104Z"}
+info: DB connected {"timestamp":"2024-08-22T14:25:15.586Z"}
+info: DB connected {"timestamp":"2024-08-22T14:26:52.124Z"}
+error: /register {"timestamp":"2024-08-22T14:28:37.596Z"}
+info: DB connected {"timestamp":"2024-08-22T14:29:57.096Z"}
+info: DB connected {"timestamp":"2024-08-22T14:30:57.905Z"}
+info: DB connected {"timestamp":"2024-08-22T14:33:21.522Z"}
+info: UserController.register {"timestamp":"2024-08-22T14:36:06.523Z"}
+error: /signup {"timestamp":"2024-08-22T14:38:44.135Z"}
+info: DB connected {"timestamp":"2024-08-22T14:39:59.460Z"}
+info: UserController.register {"timestamp":"2024-08-22T14:40:23.371Z"}
+info: DB connected {"timestamp":"2024-08-22T14:45:19.558Z"}

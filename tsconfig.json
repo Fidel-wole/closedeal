@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6", // Change to es2018 for better compatibility
+    "module": "commonjs",
+    "lib": ["es6"], // Change to es2018 for better compatibility
+    "allowJs": true,
+    "outDir": "./build",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "src/configs/cloudinary.ts"],
+  "exclude": ["node_modules"]
+}

@@ -16,7 +16,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
   },
 });
-
+453111
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -27,9 +27,14 @@ io.on('connection', (socket) => {
   console.log('New client connected');
 
   socket.on('conversation', async (data: { text: string }) => {
-    const { text } = data;
-    const { prompt, analysis } = await processConversation(text);
-    socket.emit('prompt', { prompt, analysis });
+    try {
+      const { text } = data;
+      const { prompt, analysis } = await processConversation(text);
+      socket.emit('prompt', { prompt, analysis });
+    } catch (error) {
+      console.error('Error processing conversation:', error);
+      socket.emit('error', { message: 'Failed to process conversation' });
+    }
   });
 
   socket.on('disconnect', () => {

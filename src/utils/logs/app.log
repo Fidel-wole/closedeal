@@ -16,3 +16,22 @@ error: /signup {"timestamp":"2024-08-22T14:38:44.135Z"}
 info: DB connected {"timestamp":"2024-08-22T14:39:59.460Z"}
 info: UserController.register {"timestamp":"2024-08-22T14:40:23.371Z"}
 info: DB connected {"timestamp":"2024-08-22T14:45:19.558Z"}
+info: DB connected {"timestamp":"2024-08-25T06:10:58.335Z"}
+error: /prospect/add-prospect {"timestamp":"2024-08-25T06:16:59.707Z"}
+info: DB connected {"timestamp":"2024-08-25T06:18:38.313Z"}
+info: DB connected {"timestamp":"2024-08-25T06:22:51.819Z"}
+info: DB connected {"timestamp":"2024-08-25T06:31:11.376Z"}
+info: DB connected {"timestamp":"2024-08-25T06:33:58.287Z"}
+info: DB connected {"timestamp":"2024-08-26T04:49:59.744Z"}
+info: DB connected {"timestamp":"2024-08-26T04:56:41.262Z"}
+info: DB connected {"timestamp":"2024-08-26T04:58:11.466Z"}
+info: DB connected {"timestamp":"2024-08-26T05:03:49.697Z"}
+info: DB connected {"timestamp":"2024-08-26T05:04:33.130Z"}
+info: DB connected {"timestamp":"2024-08-26T05:10:41.185Z"}
+info: DB connected {"timestamp":"2024-08-26T05:11:15.464Z"}
+info: DB connected {"timestamp":"2024-08-26T05:12:03.055Z"}
+info: DB connected {"timestamp":"2024-08-26T05:12:25.492Z"}
+info: DB connected {"timestamp":"2024-08-26T05:13:33.267Z"}
+info: DB connected {"timestamp":"2024-08-26T05:14:14.042Z"}
+info: DB connected {"timestamp":"2024-08-26T05:21:06.598Z"}
+info: DB connected {"timestamp":"2024-08-26T05:31:08.795Z"}

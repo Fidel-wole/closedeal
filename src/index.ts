@@ -23,7 +23,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(appConfig.apiV1URL, v1Router);
 
-processConversation("Hello")
 io.on('connection', (socket) => {
   console.log('New client connected');
 

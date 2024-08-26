@@ -1,6 +1,6 @@
 import express, { Application } from 'express';
 import http from 'http';
-import { Server } from 'socket.io';
+import WebSocket from 'ws';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import connectDB from './db/mongoose';
@@ -10,34 +10,30 @@ import { processConversation } from './utils/functions';
 
 const app: Application = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: true,
-    methods: ['GET', 'POST'],
-  },
-});
-453111
+const wss = new WebSocket.Server({ server });
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(appConfig.apiV1URL, v1Router);
 
-io.on('connection', (socket) => {
+wss.on('connection', (ws) => {
   console.log('New client connected');
 
-  socket.on('conversation', async (data: { text: string }) => {
+  ws.on('message', async (message: string) => {
     try {
+      const data = JSON.parse(message);
       const { text } = data;
       const { prompt, analysis } = await processConversation(text);
-      socket.emit('prompt', { prompt, analysis });
+      ws.send(JSON.stringify({ prompt, analysis }));
     } catch (error) {
       console.error('Error processing conversation:', error);
-      socket.emit('error', { message: 'Failed to process conversation' });
+      ws.send(JSON.stringify({ error: 'Failed to process conversation' }));
     }
   });
 
-  socket.on('disconnect', () => {
+  ws.on('close', () => {
     console.log('Client disconnected');
   });
 });

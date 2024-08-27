@@ -67,7 +67,7 @@ export const processConversation = async (
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini", 
       messages: [
-        { role: "system", content: "You are a helpful assistant." },
+        { role: "system", content: "You are an AI assistant helping a salesperson during a call. Given the following text, suggest a helpful response or next question." },
         { role: "user", content: text },
       ],
     });

@@ -8,8 +8,8 @@ class CallController {
     const { body } = req;
     const callData: ICall = {
       userId: (req as CustomRequest).userId,
-      startTime: body.start_time,
-      duration: body.duration,
+      prospectId:body.prospectId,
+      startTime: new Date()
     };
     try {
       const call = await CallService.startCall(callData);
@@ -27,6 +27,7 @@ class CallController {
       dispatcher.DispatchErrorMessage(res, err.message);
     }
   }
+
 }
 
 export default new CallController();

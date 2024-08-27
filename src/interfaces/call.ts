@@ -1,7 +1,9 @@
+import { User } from "./user";
+import { IProspect } from "./prospect";
 export interface ICall {
-    _id?: string;
-    userId: string;
+    userId: User | string;
+    prospectId: IProspect | string;
     startTime: Date;
-    duration: number;
-    transcript?: string;
+    endTime?: Date;
+    duration?: number; 
 }

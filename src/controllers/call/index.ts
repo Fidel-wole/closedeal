@@ -13,7 +13,7 @@ class CallController {
     };
     try {
       const call = await CallService.startCall(callData);
-      dispatcher.DispatchSuccessMessage(res, "", call);
+      dispatcher.DispatchSuccessMessage(res, "Call has started", call);
     } catch (err: any) {
       dispatcher.DispatchErrorMessage(res, err.message);
     }
@@ -28,6 +28,15 @@ class CallController {
     }
   }
 
+  async endCall(req:Request, res:Response){
+    const {callId} = req.params;
+    try{
+      const endCall = await CallService.endCall(callId);
+      dispatcher.DispatchSuccessMessage(res, "Call ended sucessfully", endCall)
+    }catch(err:any){
+      dispatcher.DispatchErrorMessage(res, err.message)
+    }
+  }
 }
 
 export default new CallController();

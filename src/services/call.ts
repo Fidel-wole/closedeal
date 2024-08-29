@@ -1,7 +1,8 @@
+import { ICall } from '../interfaces/call';
 import CallModel from '../models/call';
 
 class CallService {
-    async startCall(data: any) {
+    async startCall(data: ICall) {
         const call = new CallModel(data);
         return await call.save();
     }
@@ -21,6 +22,7 @@ class CallService {
         //         $inc: { totalCalls: 1, totalDuration: call.duration },
         //     });
         // }
+        return call
     }
 }
 }

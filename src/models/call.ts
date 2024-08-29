@@ -10,3 +10,4 @@ const CallSchema = new Schema<ICall>({
 });
 
 export default model<ICall>('Call', CallSchema);
+                        

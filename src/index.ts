@@ -1,29 +1,13 @@
-import express, { Application } from 'express';
-import http from 'http';
-import WebSocket from 'ws';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import speech from '@google-cloud/speech';
-import connectDB from './db/mongoose';
-import v1Router from './routes';
-import appConfig from './configs/app';
-import { processConversation } from './utils/functions';
-import fs from 'fs';
-import path from 'path';
-
-// Decode and set up Google Cloud credentials
-const base64Key = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-
-if (base64Key) {
-  const keyFilePath = path.join(__dirname, 'service-account-file.json');
-  fs.writeFileSync(keyFilePath, Buffer.from(base64Key, 'base64'));
-  
-  // Set the environment variable for Google Cloud SDK
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyFilePath;
-} else {
-  console.error('GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable is not set');
-  process.exit(1);
-}
+import express, { Application } from "express";
+import http from "http";
+import WebSocket from "ws";
+import bodyParser from "body-parser";
+import cors from "cors";
+import connectDB from "./db/mongoose";
+import v1Router from "./routes";
+import appConfig from "./configs/app";
+import { processConversation } from "./utils/functions";
+import axios from "axios";
 
 // Initialize Express and WebSocket server
 const app: Application = express();
@@ -36,63 +20,90 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(appConfig.apiV1URL, v1Router);
 
-// Initialize Google Speech-to-Text client
-const client = new speech.SpeechClient();
+// AssemblyAI WebSocket URL
+const ASSEMBLYAI_URL =
+  "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000";
+const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
 
-// WebSocket connection handling
-wss.on('connection', (ws) => {
-  console.log('New client connected');
-  let recognizeStream: any = null;
+if (!ASSEMBLYAI_API_KEY) {
+  console.error("ASSEMBLYAI_API_KEY environment variable is not set");
+  process.exit(1);
+}
 
-  ws.on('message', async (message: string) => {
+wss.on("connection", (ws) => {
+  console.log("New client connected");
+  let aaiSocket: WebSocket | null = null;
+
+  ws.on("message", async (message: string) => {
     try {
       const msg = JSON.parse(message);
 
-      if (msg.event === 'start') {
-        recognizeStream = client
-          .streamingRecognize({
-            config: {
-              encoding: 'LINEAR16', // or 'FLAC', depending on your audio format
-              sampleRateHertz: 16000, // Adjust to your actual sample rate
-              languageCode: 'en-US',
-            },  
-            interimResults: true,
-          })
-          .on('error', (error) => {
-            console.error('Error in recognizeStream:', error);
-          })
-          .on('data', (transcriptionData) => {
-            const transcript = transcriptionData.results[0]?.alternatives[0]?.transcript || '';
-            ws.send(JSON.stringify({ event: 'transcription', transcription: transcript }));
-
-            processConversation(transcript).then(({ prompt, analysis }) => {
-              ws.send(JSON.stringify({ prompt, analysis }));
-            }).catch((error) => {
-              console.error('Error processing conversation:', error);
-              ws.send(JSON.stringify({ error: 'Failed to process conversation' }));
-            });
-          });
-      } else if (msg.event === 'audio') {
-        if (recognizeStream) {
-          const audioBuffer = Buffer.from(msg.audio, 'base64');
-          console.log('Received audio buffer:', audioBuffer);
-          recognizeStream.write(audioBuffer);
+      if (msg.event === "start") {
+        // Establish WebSocket connection with AssemblyAI
+        if (aaiSocket) {
+          console.log("Already connected to AssemblyAI WebSocket");
+          aaiSocket.close(); // Close existing connection if any
         }
-      } else if (msg.event === 'stop') {
-        if (recognizeStream) {
-          recognizeStream.end();
+        aaiSocket = new WebSocket(ASSEMBLYAI_URL, {
+          headers: {
+            Authorization: `Bearer ${ASSEMBLYAI_API_KEY}`,
+          },
+        });
+
+        aaiSocket.on("open", () => {
+          console.log("Connected to AssemblyAI WebSocket");
+          ws.send(
+            JSON.stringify({
+              event: "ready",
+              message: "Ready to receive audio",
+            })
+          );
+        });
+
+        aaiSocket.on("message", (data) => {
+          const response = JSON.parse(data.toString());
+          console.log("Received from AssemblyAI:", response);
+          const transcription = response.error || "Hi";
+          ws.send(JSON.stringify({ event: "transcription", transcription }));
+
+          processConversation(transcription)
+            .then(({ prompt, analysis }) => {
+              ws.send(JSON.stringify({ prompt, analysis }));
+            })
+            .catch((error) => {
+              console.error("Error processing conversation:", error);
+              ws.send(
+                JSON.stringify({ error: "Failed to process conversation" })
+              );
+            });
+        });
+
+        aaiSocket.on("error", (error) => {
+          console.error("Error in AssemblyAI WebSocket:", error);
+        });
+      } else if (msg.event === "audio") {
+        if (aaiSocket && aaiSocket.readyState === WebSocket.OPEN) {
+          const audioBuffer = Buffer.from(msg.audio, "base64");
+          console.log("Received audio buffer:", audioBuffer);
+          aaiSocket.send(audioBuffer);
+        } else {
+          console.error("AssemblyAI WebSocket is not open");
+        }
+      } else if (msg.event === "stop") {
+        if (aaiSocket) {
+          aaiSocket.close();
         }
       }
     } catch (error) {
-      console.error('Error handling WebSocket message:', error);
+      console.error("Error handling WebSocket message:", error);
     }
   });
 
-  ws.on('close', () => {
-    if (recognizeStream) {
-      recognizeStream.end();
+  ws.on("close", () => {
+    if (aaiSocket) {
+      aaiSocket.close();
     }
-    console.log('Client disconnected');
+    console.log("Client disconnected");
   });
 });
 
@@ -105,7 +116,7 @@ async function startServer() {
       console.log(`Server listening at http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error('Error starting server:', err);
+    console.error("Error starting server:", err);
   }
 }
 

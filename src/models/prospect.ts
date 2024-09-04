@@ -22,6 +22,8 @@ const ProspectSchema: Schema = new Schema<IProspectModel>(
     companyRole: { type: String },
     aboutCompany: { type: String },
     customFields: { type: Map, of: Schema.Types.Mixed }, // If custom fields are allowed
+    totalCalls:{type:Number},
+    totalDuration:{type:Number}
   },
   {
     timestamps: true,

@@ -1,8 +1,5 @@
 import User from "../models/user";
-import {
-  comparePasswords,
-  jsonwebtoken,
-} from "../utils/functions";
+import { comparePasswords, jsonwebtoken } from "../utils/functions";
 import { User as UserInterface } from "../interfaces/user";
 
 export default class AuthService {
@@ -34,7 +31,7 @@ export default class AuthService {
     if (!user) {
       throw new Error("User with the specified email not found");
     }
-   
+
     if (data.password !== undefined) {
       const isMatch = await comparePasswords(data.password, user.password);
 
@@ -46,6 +43,26 @@ export default class AuthService {
     const token = jsonwebtoken(user._id as any, user.email);
 
     return { token };
-}
+  }
+  static async resetPassword(email: string) {
+    try {
+      const emailExist = await User.findOne({ email: email });
+      if (!emailExist) {
+        throw new Error("Email does not exist");
+      } else {
+        //send otp to email
+        return emailExist;
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  }
 
+  static async confirmOtp(otp:number){
+    try{
+    const otp = await User.findOne({})
+    }catch(err:any){
+      throw err
+    }
+  }
 }

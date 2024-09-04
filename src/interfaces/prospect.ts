@@ -14,5 +14,7 @@ export interface IProspect {
     companyRole: string;
     aboutCompany?: string;
     customFields?: Record<string, string | number | boolean>; // If custom fields are allowed
+    totalCalls?:number;
+    totalDuration?:number
   }
   

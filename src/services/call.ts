@@ -1,6 +1,6 @@
 import { ICall } from '../interfaces/call';
 import CallModel from '../models/call';
-
+import { Prospect } from '../models/prospect';
 class CallService {
     async startCall(data: ICall) {
         const call = new CallModel(data);
@@ -18,12 +18,12 @@ class CallService {
             await call.save();
     
             // Update Prospect with total call duration and count
-        //     await Prospect.findByIdAndUpdate(call.prospectId, {
-        //         $inc: { totalCalls: 1, totalDuration: call.duration },
-        //     });
-        // }
+         await Prospect.findByIdAndUpdate(call.prospectId, {
+                 $inc: { totalCalls: 1, totalDuration: call.duration },
+             });
+         }
         return call
     }
 }
-}
+
 export default new CallService();

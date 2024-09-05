@@ -3,13 +3,12 @@ import http from "http";
 import WebSocket from "ws";
 import bodyParser from "body-parser";
 import cors from "cors";
+import { AssemblyAI, RealtimeTranscript } from 'assemblyai';
 import connectDB from "./db/mongoose";
 import v1Router from "./routes";
 import appConfig from "./configs/app";
 import { processConversation } from "./utils/functions";
-import axios from "axios";
 
-// Initialize Express and WebSocket server
 const app: Application = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -20,90 +19,89 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(appConfig.apiV1URL, v1Router);
 
-// AssemblyAI WebSocket URL
-const ASSEMBLYAI_URL =
-  "wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000";
-const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
+const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY as string;
 
-if (!ASSEMBLYAI_API_KEY) {
-  console.error("ASSEMBLYAI_API_KEY environment variable is not set");
-  process.exit(1);
-}
+const client = new AssemblyAI({
+  apiKey: ASSEMBLYAI_API_KEY,
+});
 
 wss.on("connection", (ws) => {
   console.log("New client connected");
-  let aaiSocket: WebSocket | null = null;
+  let transcriber = client.realtime.transcriber({
+    sampleRate: 16000,
+  });
+
+  transcriber.on('open', ({ sessionId }) => {
+    console.log(`Session opened with ID: ${sessionId}`);
+    ws.send(JSON.stringify({ event: 'ready', sessionId }));
+  });
+
+  transcriber.on('error', (error: Error) => {
+    console.error('Error:', error);
+    ws.send(JSON.stringify({ event: 'error', message: error.message }));
+  });
+
+  transcriber.on('close', (code: number, reason: string) => {
+    console.log('Session closed:', code, reason);
+    ws.send(JSON.stringify({ event: 'closed', code, reason }));
+  });
+
+  transcriber.on('transcript', (transcript: RealtimeTranscript) => {
+    console.log('Received:', transcript);
+    if (!transcript.text) return;
+    
+    if (transcript.message_type == 'FinalTranscript') {
+      console.log('Final:', transcript.text);
+      ws.send(JSON.stringify({ event: 'finalTranscript', text: transcript.text }));
+      
+      // Process the conversation with the final transcript
+      processConversation(transcript.text)
+        .then(({ prompt, analysis }) => {
+          ws.send(JSON.stringify({ event: 'analysis', prompt, analysis }));
+        })
+        .catch((error) => {
+          console.error("Error processing conversation:", error);
+          ws.send(JSON.stringify({ event: 'error', message: "Failed to process conversation" }));
+        });
+    } else {
+      console.log('Partial:', transcript.text);
+      ws.send(JSON.stringify({ event: 'partialTranscript', text: transcript.text }));
+    }
+  });
 
   ws.on("message", async (message: string) => {
     try {
       const msg = JSON.parse(message);
 
       if (msg.event === "start") {
-        // Establish WebSocket connection with AssemblyAI
-        if (aaiSocket) {
-          console.log("Already connected to AssemblyAI WebSocket");
-          aaiSocket.close(); // Close existing connection if any
-        }
-        aaiSocket = new WebSocket(ASSEMBLYAI_URL, {
-          headers: {
-            Authorization: `Bearer ${ASSEMBLYAI_API_KEY}`,
-          },
-        });
-
-        aaiSocket.on("open", () => {
-          console.log("Connected to AssemblyAI WebSocket");
-          ws.send(
-            JSON.stringify({
-              event: "ready",
-              message: "Ready to receive audio",
-            })
-          );
-        });
-
-        aaiSocket.on("message", (data) => {
-          const response = JSON.parse(data.toString());
-          console.log("Received from AssemblyAI:", response);
-          const transcription = response.error || "Hi";
-          ws.send(JSON.stringify({ event: "transcription", transcription }));
-
-          processConversation(transcription)
-            .then(({ prompt, analysis }) => {
-              ws.send(JSON.stringify({ prompt, analysis }));
-            })
-            .catch((error) => {
-              console.error("Error processing conversation:", error);
-              ws.send(
-                JSON.stringify({ error: "Failed to process conversation" })
-              );
-            });
-        });
-
-        aaiSocket.on("error", (error) => {
-          console.error("Error in AssemblyAI WebSocket:", error);
-        });
+        console.log('Connecting to real-time transcript service');
+        await transcriber.connect();
       } else if (msg.event === "audio") {
-        if (aaiSocket && aaiSocket.readyState === WebSocket.OPEN) {
-          const audioBuffer = Buffer.from(msg.audio, "base64");
-          console.log("Received audio buffer:", audioBuffer);
-          aaiSocket.send(audioBuffer);
-        } else {
-          console.error("AssemblyAI WebSocket is not open");
+        const audioBuffer = Buffer.from(msg.audio, "base64");
+        console.log("Audio buffer: ", audioBuffer)
+        console.log('Received audio chunk of size:', audioBuffer.length);
+
+        // Add check for size and format (length should be reasonable)
+        if (audioBuffer.length < 1000) {
+          console.log('Audio too short or invalid.');
+          ws.send(JSON.stringify({ event: 'error', message: 'Invalid audio length or format' }));
+          return;
         }
+
+        transcriber.sendAudio(audioBuffer);
       } else if (msg.event === "stop") {
-        if (aaiSocket) {
-          aaiSocket.close();
-        }
+        console.log('Closing real-time transcript connection');
+        await transcriber.close();
       }
     } catch (error) {
       console.error("Error handling WebSocket message:", error);
+      ws.send(JSON.stringify({ event: 'error', message: "Internal server error" }));
     }
   });
 
-  ws.on("close", () => {
-    if (aaiSocket) {
-      aaiSocket.close();
-    }
+  ws.on("close", async () => {
     console.log("Client disconnected");
+    await transcriber.close();
   });
 });
 
@@ -117,6 +115,7 @@ async function startServer() {
     });
   } catch (err) {
     console.error("Error starting server:", err);
+    process.exit(1);
   }
 }
 

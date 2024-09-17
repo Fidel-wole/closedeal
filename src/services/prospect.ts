@@ -29,4 +29,39 @@ export default class ProspectService {
       throw err;
     }
   }
+  static async searchProspects(userId: string, searchTerm: string, page: number = 1, limit: number = 10) {
+    try {
+      const skip = (page - 1) * limit;
+      const searchRegex = new RegExp(searchTerm, 'i');
+
+      const query = {
+        userId,
+        $or: [
+          { firstName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+          { company: searchRegex },
+          { companyRole: searchRegex },
+        ]
+      };
+
+      const prospects = await Prospect.find(query)
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const total = await Prospect.countDocuments(query);
+
+      return {
+        prospects,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalProspects: total,
+      };
+    } catch (err: any) {
+      throw err;
+    }
+  }
+
 }
+ 

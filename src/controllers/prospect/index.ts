@@ -38,4 +38,21 @@ export default class ProspectController{
             Dispatcher.DispatchErrorMessage(res, err.message)
         }
     }
+
+    static async searchProspects(req: Request, res: Response) {
+        const { userId } = req as CustomRequest;
+        const { searchTerm, page, limit } = req.query;
+
+        try {
+            const searchResults = await ProspectService.searchProspects(
+                userId,
+                searchTerm as string,
+                Number(page) || 1,
+                Number(limit) || 10
+            );
+            Dispatcher.DispatchSuccessMessage(res, "Prospects searched successfully", searchResults);
+        } catch (err: any) {
+            Dispatcher.DispatchErrorMessage(res, err.message);
+        }
+    }
 }

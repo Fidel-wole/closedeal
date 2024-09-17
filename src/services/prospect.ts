@@ -9,9 +9,22 @@ export default class ProspectService {
       throw err;
     }
   }
-  static async getProspects(userId: any) {
+  static async getProspects(userId: string, page: number = 1, limit: number = 10) {
     try {
-      return await Prospect.find({ userId: userId });
+      const skip = (page - 1) * limit;
+      const prospects = await Prospect.find({ userId })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const total = await Prospect.countDocuments({ userId });
+
+      return {
+        prospects,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalProspects: total,
+      };
     } catch (err: any) {
       throw err;
     }

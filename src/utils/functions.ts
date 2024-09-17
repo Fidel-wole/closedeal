@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 import { JWT_ACCESS_SECRET } from "../configs/env";
 import { ZodError } from "zod";
 import { OpenAI } from "openai";
+import { PassThrough, Readable } from 'stream';
+import ffmpeg from 'fluent-ffmpeg';
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -93,5 +96,30 @@ export const processConversation = async (
     }
   }
 };
+
+
+// Configure your virtual audio device here
+const VIRTUAL_AUDIO_DEVICE = 'default'; // Change as needed
+
+export function getAudioStream(): Readable {
+  const audioStream = new PassThrough();
+
+  // Capture audio from the virtual audio device
+  const ffmpegProcess = ffmpeg()
+    .input(VIRTUAL_AUDIO_DEVICE)
+    .inputFormat('wav') // Adjust based on your virtual audio device's format
+    .audioCodec('pcm_s16le') // Set the audio codec to PCM
+    .audioFilters('volume=1') // Optional: Adjust volume if needed
+    .format('wav') // Output format
+    .pipe(audioStream, { end: true });
+
+  // Handle errors
+  ffmpegProcess.on('error', (err: Error) => {
+    console.error('Error capturing audio:', err);
+    audioStream.end();
+  });
+
+  return audioStream;
+}
 
 

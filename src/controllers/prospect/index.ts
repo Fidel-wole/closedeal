@@ -30,9 +30,10 @@ export default class ProspectController{
         }
     }
     static async getProspects(req:Request, res:Response){
-        const {userId} = (req as CustomRequest)
+        const {userId} = (req as CustomRequest);
+        const {page, limit } = req.query;
         try{
-        const prospects = await ProspectService.getProspects(userId)
+        const prospects = await ProspectService.getProspects(userId, Number(page), Number(limit))
         Dispatcher.DispatchSuccessMessage(res, "Prospects fetched", prospects);
         }catch(err:any){
             Dispatcher.DispatchErrorMessage(res, err.message)

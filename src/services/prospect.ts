@@ -9,7 +9,7 @@ export default class ProspectService {
       throw err;
     }
   }
-  static async getProspects(userId: string, page: number = 1, limit: number = 10) {
+  static async getProspects(userId: string, page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
       const prospects = await Prospect.find({ userId })
@@ -18,6 +18,10 @@ export default class ProspectService {
         .exec();
 
       const total = await Prospect.countDocuments({ userId });
+
+      if (prospects.length === 0) {
+        return { message: "No more prospects available." };
+      }
 
       return {
         prospects,
@@ -29,7 +33,7 @@ export default class ProspectService {
       throw err;
     }
   }
-  static async searchProspects(userId: string, searchTerm: string, page: number = 1, limit: number = 10) {
+  static async searchProspects(userId: string, searchTerm: string, page: number, limit: number) {
     try {
       const skip = (page - 1) * limit;
       const searchRegex = new RegExp(searchTerm, 'i');
@@ -52,6 +56,10 @@ export default class ProspectService {
 
       const total = await Prospect.countDocuments(query);
 
+      if (prospects.length === 0) {
+        return { message: "No more prospects available." };
+      }
+
       return {
         prospects,
         currentPage: page,
@@ -64,4 +72,3 @@ export default class ProspectService {
   }
 
 }
- 

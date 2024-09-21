@@ -8,7 +8,7 @@ import connectDB from "./db/mongoose";
 import v1Router from "./routes";
 import appConfig from "./configs/app";
 import { processConversation } from "./utils/functions";
-import { authenticateAndJoinMeet } from "./utils/bot";
+//import { authenticateAndJoinMeet } from "./utils/bot";
 
 
 const app: Application = express();
